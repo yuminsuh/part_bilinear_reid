@@ -31,12 +31,9 @@ def write_json(obj, fpath):
     with open(fpath, 'w') as f:
         json.dump(obj, f, indent=4, separators=(',', ': '), cls=MyEncoder)
 
-def save_checkpoint(state, is_best, fpath='checkpoint.pth.tar'):
+def save_checkpoint(state, fpath='checkpoint.pth.tar'):
     mkdir_if_missing(osp.dirname(fpath))
     torch.save(state, fpath)
-    if is_best:
-        shutil.copy(fpath, osp.join(osp.dirname(fpath), 'model_best.pth.tar'))
-
 
 def load_checkpoint(fpath):
     if osp.isfile(fpath):
