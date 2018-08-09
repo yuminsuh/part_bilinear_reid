@@ -9,6 +9,21 @@ export CPM_PRETRAINED=$CPM_PRETRAINED
 
 source $CONFIGURE_PATH
 
+# Download pretrained network weights
+if ! [ -d pretrained ]; then
+    mkdir -p pretrained
+fi
+if ! [ -f "pretrained/bvlc_googlenet.caffemodel.pth" ]; then
+    echo "Downloading pretrained inception_v1..."
+    wget "https://www.dropbox.com/s/2ljm35ztj6hllcu/bvlc_googlenet.caffemodel.pth?dl=0" -O pretrained/bvlc_googlenet.caffemodel.pth
+    echo "Done!"
+fi
+if ! [ -f "pretrained/pose_iter_440000.caffemodel.pth" ]; then
+    echo "Downloading pretrained cpm..."
+    wget "https://www.dropbox.com/s/pzb3ow1793yf8dc/pose_iter_440000.caffemodel.pth?dl=0" -O pretrained/pose_iter_440000.caffemodel.pth
+    echo "Done!"
+fi
+
 # Make log directory
 if [ -d $LOG_DIR ]; then
     echo "Same experiment already exists. Change the exp name and retry!"
