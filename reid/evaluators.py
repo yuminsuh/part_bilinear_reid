@@ -58,7 +58,7 @@ class Evaluator(object):
         feat_gallery = torch.cat([features[f].unsqueeze(0) for f,_,_ in gallery], 0)
 
         # Calculate CMC & mAP
-        result_cmc, result_meanap, meanaps, distmats = cmc_meanap_fast(feat_query, feat_gallery,
+        result_cmc, result_meanap = cmc_meanap_fast(feat_query, feat_gallery,
                                  query_ids, gallery_ids,
                                  query_cams, gallery_cams, topk=topk)
 

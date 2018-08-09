@@ -168,29 +168,30 @@ class Inception_v1_cpm(nn.Module):
         output_part = self.part_feat_extractor(inputs)
         return self.pooling(output_app, output_part)
 
-def inception_v1_cpm_pretrained(features=512, use_relu=False, dilation=1):
+def inception_v1_cpm_pretrained(features=512, use_relu=False, dilation=1, initialize=True):
     model = Inception_v1_cpm(num_features=features, use_relu=use_relu, dilation=dilation)
 
-    app_stream_pretrained_weight = os.environ['INCEPTION_V1_PRETRAINED']
-    part_stream_pretrained_weight = os.environ['CPM_PRETRAINED']
-    #
-    state_dict = torch.load(app_stream_pretrained_weight)
-    state_dict = {'app_feat_extractor.'+k.replace("app_feat_extractor.",""):v for k,v in state_dict.items()}
-    part_dict = torch.load(part_stream_pretrained_weight)
-    part_dict = {'part_feat_extractor.'+k.replace("part_feat_extractor.","").replace("app_feat_extractor.","").replace("feat_extractor.","."):v for k,v in part_dict.items()}
-    state_dict.update(part_dict)
-    state_dict['app_feat_extractor.input_feat.weight'] = nn.init.xavier_uniform_(model.app_feat_extractor.input_feat.weight).detach()
-    state_dict['app_feat_extractor.input_feat.bias'] = torch.zeros(model.app_feat_extractor.input_feat.bias.size())
-    state_dict['part_feat_extractor.pose1.weight'] = nn.init.xavier_uniform_(model.part_feat_extractor.pose1.weight).detach()
-    state_dict['part_feat_extractor.pose1.bias'] = torch.zeros(model.part_feat_extractor.pose1.bias.size())
-    #TODO
-    state_dict['app_feat_extractor.bn.running_mean'] = model.app_feat_extractor.bn.running_mean
-    state_dict['app_feat_extractor.bn.running_var'] = model.app_feat_extractor.bn.running_var
-    state_dict['part_feat_extractor.bn.running_mean'] = model.part_feat_extractor.bn.running_mean
-    state_dict['part_feat_extractor.bn.running_var'] = model.part_feat_extractor.bn.running_var
+    if initialize:
+        app_stream_pretrained_weight = os.environ['INCEPTION_V1_PRETRAINED']
+        part_stream_pretrained_weight = os.environ['CPM_PRETRAINED']
+        #
+        state_dict = torch.load(app_stream_pretrained_weight)
+        state_dict = {'app_feat_extractor.'+k.replace("app_feat_extractor.",""):v for k,v in state_dict.items()}
+        part_dict = torch.load(part_stream_pretrained_weight)
+        part_dict = {'part_feat_extractor.'+k.replace("part_feat_extractor.","").replace("app_feat_extractor.","").replace("feat_extractor.","."):v for k,v in part_dict.items()}
+        state_dict.update(part_dict)
+        state_dict['app_feat_extractor.input_feat.weight'] = nn.init.xavier_uniform_(model.app_feat_extractor.input_feat.weight).detach()
+        state_dict['app_feat_extractor.input_feat.bias'] = torch.zeros(model.app_feat_extractor.input_feat.bias.size())
+        state_dict['part_feat_extractor.pose1.weight'] = nn.init.xavier_uniform_(model.part_feat_extractor.pose1.weight).detach()
+        state_dict['part_feat_extractor.pose1.bias'] = torch.zeros(model.part_feat_extractor.pose1.bias.size())
+        #TODO
+        state_dict['app_feat_extractor.bn.running_mean'] = model.app_feat_extractor.bn.running_mean
+        state_dict['app_feat_extractor.bn.running_var'] = model.app_feat_extractor.bn.running_var
+        state_dict['part_feat_extractor.bn.running_mean'] = model.part_feat_extractor.bn.running_mean
+        state_dict['part_feat_extractor.bn.running_var'] = model.part_feat_extractor.bn.running_var
 
-    model_dict = {l: torch.from_numpy(np.array(v)).view_as(p) for k,v in state_dict.items() for l,p in model.state_dict().items() if k.replace("/",".").replace("__",".").replace("._",".") in l.replace("__",".").replace("._",".")}
-    model.load_state_dict(model_dict, strict=False)
+        model_dict = {l: torch.from_numpy(np.array(v)).view_as(p) for k,v in state_dict.items() for l,p in model.state_dict().items() if k.replace("/",".").replace("__",".").replace("._",".") in l.replace("__",".").replace("._",".")}
+        model.load_state_dict(model_dict, strict=False)
 
     model.app_feat_extractor = nn.DataParallel(model.app_feat_extractor.cuda())
     model.part_feat_extractor = nn.DataParallel(model.part_feat_extractor.cuda())
