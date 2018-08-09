@@ -1,18 +1,26 @@
 PYTHON='python'
-ARCH='inception_v1_cpm_pretrained'
-DATASET='market1501'
 EXP_ID='tmp'
-LR=0.01
-BATCH_SIZE=180
-WEIGHT_DECAY=0.0002
+GPU_ID="0,1"
+
+# model
+ARCH='inception_v1_cpm_pretrained'
 FEATURES=512
+DILATION=2
+USE_RELU=false
+
+# data
+DATASET='market1501'
 HEIGHT=160
 WIDTH=80
 CROP_HEIGHT=160
 CROP_WIDTH=80
-DILATION=2
-LOG_DIR="logs/$DATASET/$EXP_ID"
+BATCH_SIZE=180
+USE_CAFFE_SAMPLER=true # [true | false]
+
+# optimizer
 OPTIMIZER='sgd_caffe'
+LR=0.01
+WEIGHT_DECAY=0.0002
 EPOCHS=750
-USE_RELU=false
-GPU_ID="0,1"
+
+LOG_DIR="logs/$DATASET/$EXP_ID"

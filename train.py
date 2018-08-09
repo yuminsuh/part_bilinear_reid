@@ -24,7 +24,8 @@ from reid.optim.sgd_caffe import SGD_caffe
 
 def get_data(name, split_id, data_dir,
              height, width, crop_height, crop_width, batch_size,
-             workers):
+             caffe_sampler=False,
+             workers=4):
 
     root = osp.join(data_dir, name)
     dataset = datasets.create(name, root, split_id=split_id)
@@ -49,8 +50,8 @@ def get_data(name, split_id, data_dir,
     ])
 
     # dataloaders
-    sampler=caffeSampler(train_set, name, batch_size=batch_size, root=dataset.images_dir)
-#    sampler=RandomIdentitySampler(train_set, 10) #TODO
+    sampler = caffeSampler(train_set, name, batch_size=batch_size, root=dataset.images_dir) if caffe_sampler else \
+              RandomIdentitySampler(train_set, 10) #TODO
     train_loader = DataLoader(
         Preprocessor(train_set, root=dataset.images_dir,
                      transform=train_transformer),
@@ -83,9 +84,10 @@ def main(args):
         json.dump(args_dict, f)
 
     # Create data loaders
-    dataset, num_classes, train_loader,test_loader = \
+    dataset, num_classes, train_loader, test_loader = \
         get_data(args.dataset, args.split, args.data_dir, args.height, \
                  args.width, args.crop_height, args.crop_width, args.batch_size, \
+                 args.caffe_sampler, \
                  args.workers)
 
     # Create model
@@ -181,6 +183,7 @@ if __name__ == '__main__':
     # training configs
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--epochs', type=int, default=750)
+    parser.add_argument('--caffe-sampler', dest='caffe_sampler', action='store_true', default=False)
     # paths
     working_dir = osp.dirname(osp.abspath(__file__))
     parser.add_argument('--data-dir', type=str, metavar='PATH',
