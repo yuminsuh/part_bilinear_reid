@@ -59,18 +59,16 @@ def cmc_meanap_fast(feat_query, feat_gallery,
     topk = min(topk, len(gallery_ids)-1)
 
     # Compute CMC, AP for each query
-    cmcs, aps, aps_all, distmat_all = [], [], [], []
+    cmcs, aps = [], []
     for i_start in range(0, num_query, num_subquery):
         print(i_start)
         i_end = min(i_start+num_subquery, num_query)
         distmat = pairwise_distances(feat_query[i_start:i_end,:], feat_gallery)
         print(distmat.shape)
-        cmc_now, ap_now, aps_now = cmc_small(distmat, query_ids[i_start:i_end], gallery_ids,
+        cmc_now, ap_now = cmc_small(distmat, query_ids[i_start:i_end], gallery_ids,
                                             query_cams[i_start:i_end], gallery_cams,
                                             topk=topk)
         cmcs += [cmc_now * np.floor(i_end-i_start) / num_query]
         aps += [ap_now * np.floor(i_end-i_start) / num_query]
-        aps_all += aps_now
-        distmat_all += [distmat]
 
     return np.array(cmcs).sum(axis=0), np.array(aps).sum()
