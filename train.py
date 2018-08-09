@@ -144,7 +144,7 @@ def main(args):
             save_dicts = {'app_state_dict': model.app_feat_extractor.module.state_dict(),
                           'part_state_dict': model.part_feat_extractor.module.state_dict()}
             save_dicts.update({'epoch': epoch})
-            save_checkpoint(save_dicts, is_best, fpath=osp.join(args.logs_dir, 'epoch_{}.pth.tar'.format(epoch)))
+            save_checkpoint(save_dicts, fpath=osp.join(args.logs_dir, 'epoch_{}.pth.tar'.format(epoch)))
 
         print('\n * Finished epoch {:3d}\n'.format(epoch))
 
