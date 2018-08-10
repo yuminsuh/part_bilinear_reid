@@ -36,5 +36,9 @@ fi
 # Parameters
 STR_PARAM="-d $DATASET -b $BATCH_SIZE -j 4 -a $ARCH --logs-dir $LOG_DIR --margin 0.2 --features $FEATURES --width $WIDTH --height $HEIGHT --crop-height $CROP_HEIGHT --crop-width $CROP_WIDTH --lr $LR --epochs $EPOCHS --dilation $DILATION --weight-decay $WEIGHT_DECAY"
 
+if [ "$USE_CAFFE_SAMPLER" = true ]; then
+    STR_PARAM="$STR_PARAM --caffe-sampler"
+fi
+
 # Run!
 CUDA_VISIBLE_DEVICES=$GPU_ID $PYTHON train.py $STR_PARAM
