@@ -36,6 +36,7 @@ class RandomIdentitySampler(Sampler):
 
 class caffeSampler(Sampler):
     def __init__(self, data_source, dataset, batch_size, iter_per_epoch=100, root=None):
+        print('Initialize caffe sampler...')
         self.data_source = data_source
         self.index_dic = defaultdict(list)
         for index, (fname, _, _) in enumerate(data_source):
@@ -53,6 +54,7 @@ class caffeSampler(Sampler):
         self.epoch = 0
         self.iter_per_epoch = iter_per_epoch
         self.batch_size = batch_size
+        print('Done!')
     def __len__(self):
         return self.iter_per_epoch*self.batch_size
     def __iter__(self):

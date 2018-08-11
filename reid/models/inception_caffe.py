@@ -115,3 +115,4 @@ class Inception_v1(nn.Module):
                     model_dict[l] = torch.from_numpy(np.array(v)).view_as(p) 
 
         self.load_state_dict(model_dict, strict=False)
+        print('inception v1 pretrained model loaded!')
