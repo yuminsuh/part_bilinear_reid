@@ -94,6 +94,7 @@ def main(args):
     valid_args = ['features', 'use_relu', 'dilation']
     model_kwargs = {k:v for k,v in args_dict.items() if k in valid_args}
     model = models.create(args.arch, **model_kwargs)
+    model = nn.DataParallel(model).cuda()
 
     # Evaluator
     evaluator = Evaluator(model)
@@ -119,21 +120,17 @@ def main(args):
 
     # Evaluate
     def evaluate(test_model):
-        # Final test
         print('Test with model {}:'.format(test_model))
         checkpoint = load_checkpoint(osp.join(args.logs_dir, '{}.pth.tar'.format(test_model)))
-        model.app_feat_extractor.module.load_state_dict(checkpoint['app_state_dict'])
-        model.part_feat_extractor.module.load_state_dict(checkpoint['part_state_dict'])
+        model.module.load(checkpoint)
         evaluator.evaluate(test_loader, dataset.query, dataset.gallery, msg='TEST')
 
     # Schedule learning rate
     def adjust_lr(epoch):
         lr = args.lr if epoch <= 200 else \
             args.lr * (0.2 ** ((epoch-200)//200 + 1))
-        print(lr)
         for g in optimizer.param_groups:
             g['lr'] = lr * g.get('lr_mult', 1)
-        lr = args.lr
 
     # Start training
     for epoch in range(1, args.epochs+1):
@@ -142,11 +139,10 @@ def main(args):
         trainer.train(epoch, train_loader, optimizer)
 
         # Save
-        if epoch%200 == 0:
-            save_dicts = {'app_state_dict': model.app_feat_extractor.module.state_dict(),
-                          'part_state_dict': model.part_feat_extractor.module.state_dict()}
-            save_dicts.update({'epoch': epoch})
-            save_checkpoint(save_dicts, fpath=osp.join(args.logs_dir, 'epoch_{}.pth.tar'.format(epoch)))
+        if epoch%200 == 0 or epoch==args.epochs:
+            save_dict = model.module.save_dict()
+            save_dict.update({'epoch': epoch})
+            save_checkpoint(save_dict, fpath=osp.join(args.logs_dir, 'epoch_{}.pth.tar'.format(epoch)))
 
         print('\n * Finished epoch {:3d}\n'.format(epoch))
 

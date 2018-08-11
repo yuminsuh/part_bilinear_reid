@@ -11,6 +11,7 @@ from reid.models.CompactBilinearPooling_dsybaik import CompactBilinearPooling
 class CPM(nn.Module):
     def __init__(self, depth_dim, num_features_part=128, use_relu=False, dilation=1):
         super(CPM, self).__init__()
+        self.pretrained = os.environ['CPM_PRETRAINED']
 
         self.depth_dim = depth_dim
         self.use_relu = use_relu
@@ -72,6 +73,8 @@ class CPM(nn.Module):
 
         self.pose1 = nn.Conv2d(185, out_channels=num_features_part, kernel_size=3, stride=1, padding=1)
         self.bn = nn.BatchNorm2d(num_features_part, affine=False)
+
+        self.init_pretrained()
 
     def forward(self, inputs):
         # data rescale
@@ -136,6 +139,23 @@ class CPM(nn.Module):
 
         return output3
 
+    def init_pretrained(self):
+        state_dict = torch.load(self.pretrained)
+        state_dict['pose1.weight'] = nn.init.xavier_uniform_(self.pose1.weight).detach()
+        state_dict['pose1.bias'] = torch.zeros(self.pose1.bias.size())
+        #TODO
+        state_dict['bn.running_mean'] = self.bn.running_mean
+        state_dict['bn.running_var'] = self.bn.running_var
+
+        model_dict = {}
+        for k,v in state_dict.items():
+            for l,p in self.state_dict().items():
+                if k in l:
+                    model_dict[l] = torch.from_numpy(np.array(v)).view_as(p) 
+
+        self.load_state_dict(model_dict, strict=True)
+        print('cpm pretrained model loaded!')
+
 class Bilinear_Pooling(nn.Module):
 
     def __init__(self, num_feat1=512, num_feat2=128, num_feat_out=512):
@@ -168,33 +188,20 @@ class Inception_v1_cpm(nn.Module):
         output_part = self.part_feat_extractor(inputs)
         return self.pooling(output_app, output_part)
 
-def inception_v1_cpm_pretrained(features=512, use_relu=False, dilation=1, initialize=True):
+    def save_dict(self):
+        state_dict = {'app_state_dict': self.app_feat_extractor.state_dict(),
+                      'part_state_dict': self.part_feat_extractor.state_dict()}
+        return state_dict
+
+    def load(self, checkpoint):
+        self.app_feat_extractor.load_state_dict(checkpoint['app_state_dict'])
+        self.part_feat_extractor.load_state_dict(checkpoint['part_state_dict'])
+
+    def init_pretrained(self):
+        self.app_feat_extractor.init_pretrained()
+        self.part_feat_extractor.init_pretrained()
+
+def inception_v1_cpm(features=512, use_relu=False, dilation=1):
     model = Inception_v1_cpm(num_features=features, use_relu=use_relu, dilation=dilation)
-
-    if initialize:
-        app_stream_pretrained_weight = os.environ['INCEPTION_V1_PRETRAINED']
-        part_stream_pretrained_weight = os.environ['CPM_PRETRAINED']
-        #
-        state_dict = torch.load(app_stream_pretrained_weight)
-        state_dict = {'app_feat_extractor.'+k.replace("app_feat_extractor.",""):v for k,v in state_dict.items()}
-        part_dict = torch.load(part_stream_pretrained_weight)
-        part_dict = {'part_feat_extractor.'+k.replace("part_feat_extractor.","").replace("app_feat_extractor.","").replace("feat_extractor.","."):v for k,v in part_dict.items()}
-        state_dict.update(part_dict)
-        state_dict['app_feat_extractor.input_feat.weight'] = nn.init.xavier_uniform_(model.app_feat_extractor.input_feat.weight).detach()
-        state_dict['app_feat_extractor.input_feat.bias'] = torch.zeros(model.app_feat_extractor.input_feat.bias.size())
-        state_dict['part_feat_extractor.pose1.weight'] = nn.init.xavier_uniform_(model.part_feat_extractor.pose1.weight).detach()
-        state_dict['part_feat_extractor.pose1.bias'] = torch.zeros(model.part_feat_extractor.pose1.bias.size())
-        #TODO
-        state_dict['app_feat_extractor.bn.running_mean'] = model.app_feat_extractor.bn.running_mean
-        state_dict['app_feat_extractor.bn.running_var'] = model.app_feat_extractor.bn.running_var
-        state_dict['part_feat_extractor.bn.running_mean'] = model.part_feat_extractor.bn.running_mean
-        state_dict['part_feat_extractor.bn.running_var'] = model.part_feat_extractor.bn.running_var
-
-        model_dict = {l: torch.from_numpy(np.array(v)).view_as(p) for k,v in state_dict.items() for l,p in model.state_dict().items() if k.replace("/",".").replace("__",".").replace("._",".") in l.replace("__",".").replace("._",".")}
-        model.load_state_dict(model_dict, strict=False)
-
-    model.app_feat_extractor = nn.DataParallel(model.app_feat_extractor.cuda())
-    model.part_feat_extractor = nn.DataParallel(model.part_feat_extractor.cuda())
-    model.pooling = nn.DataParallel(model.pooling.cuda())
 
     return model

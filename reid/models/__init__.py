@@ -1,10 +1,10 @@
 from __future__ import absolute_import
 
-from .cpm import inception_v1_cpm_pretrained
+from .cpm import inception_v1_cpm
 
 
 __factory = {
-    'inception_v1_cpm_pretrained': inception_v1_cpm_pretrained,
+    'inception_v1_cpm': inception_v1_cpm,
 }
 
 

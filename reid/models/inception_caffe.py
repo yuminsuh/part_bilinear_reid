@@ -3,6 +3,8 @@ Original code from: https://github.com/antspy/inception_v1.pytorch
 Hacked by Yumin Suh (n12345@snu.ac.kr)
 """
 
+import numpy as np
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -41,6 +43,7 @@ class Inception_v1(nn.Module):
     def __init__(self, num_features=512, dilation=1):
         super(Inception_v1, self).__init__()
         self.dilation = dilation
+        self.pretrained = os.environ['INCEPTION_V1_PRETRAINED']
 
         #conv2d0
         self.conv1__7x7_s2 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3)
@@ -70,6 +73,8 @@ class Inception_v1(nn.Module):
         self.input_feat = nn.Conv2d(832, num_features, (1,1), (1,1), (0,0))
         self.bn = nn.BatchNorm2d(num_features, affine=False)
 
+        self.init_pretrained()
+
     def forward(self, input):
 
         output = self.max_pool1(F.relu(self.conv1__7x7_s2(input)))
@@ -94,3 +99,19 @@ class Inception_v1(nn.Module):
         output = self.bn(output)
 
         return output
+
+    def init_pretrained(self):
+        state_dict = torch.load(self.pretrained)
+        state_dict['input_feat.weight'] = nn.init.xavier_uniform_(self.input_feat.weight).detach()
+        state_dict['input_feat.bias'] = torch.zeros(self.input_feat.bias.size())
+        #TODO
+        state_dict['bn.running_mean'] = self.bn.running_mean
+        state_dict['bn.running_var'] = self.bn.running_var
+
+        model_dict = {}
+        for k,v in state_dict.items():
+            for l,p in self.state_dict().items():
+                if k.replace("/",".") in l.replace("__",".").replace("._","."):
+                    model_dict[l] = torch.from_numpy(np.array(v)).view_as(p) 
+
+        self.load_state_dict(model_dict, strict=False)

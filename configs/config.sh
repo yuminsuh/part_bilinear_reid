@@ -3,7 +3,7 @@ EXP_ID='tmp'
 GPU_ID="0,1"
 
 # model
-ARCH='inception_v1_cpm_pretrained'
+ARCH='inception_v1_cpm'
 FEATURES=512
 DILATION=2
 USE_RELU=false
@@ -14,7 +14,7 @@ HEIGHT=160
 WIDTH=80
 CROP_HEIGHT=160
 CROP_WIDTH=80
-BATCH_SIZE=180
+BATCH_SIZE=250
 USE_CAFFE_SAMPLER=true # [true | false]
 
 # optimizer
