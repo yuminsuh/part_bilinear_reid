@@ -108,5 +108,5 @@ logs/
 configs/*
 !configs/config.sh
 ./data/*
-paths
 pretrained/*
+*txt

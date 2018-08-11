@@ -14,7 +14,7 @@ from reid.utils.serialization import load_checkpoint
 from reid.utils.osutils import set_paths
 
 # Settings
-exp_dir = 'logs/market1501/eccv18_reproduce'
+exp_dir = 'logs/market1501/tmp'
 target_epoch = 750
 batch_size = 50
 gpu_ids = '0'
