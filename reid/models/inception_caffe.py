@@ -40,7 +40,7 @@ class Inception_base(nn.Module):
         return torch.cat([output1, output2, output3, output4], dim=self.depth_dim)
 
 class Inception_v1(nn.Module):
-    def __init__(self, num_features=512, dilation=1):
+    def __init__(self, num_features=512, dilation=1, initialize=True):
         super(Inception_v1, self).__init__()
         self.dilation = dilation
         self.pretrained = os.environ['INCEPTION_V1_PRETRAINED']
@@ -73,7 +73,8 @@ class Inception_v1(nn.Module):
         self.input_feat = nn.Conv2d(832, num_features, (1,1), (1,1), (0,0))
         self.bn = nn.BatchNorm2d(num_features, affine=False)
 
-        self.init_pretrained()
+        if initialize:
+            self.init_pretrained()
 
     def forward(self, input):
 

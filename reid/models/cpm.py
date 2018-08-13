@@ -9,7 +9,7 @@ from reid.models.inception_caffe import Inception_v1
 from reid.models.CompactBilinearPooling_dsybaik import CompactBilinearPooling
 
 class CPM(nn.Module):
-    def __init__(self, depth_dim, num_features_part=128, use_relu=False, dilation=1):
+    def __init__(self, depth_dim, num_features_part=128, use_relu=False, dilation=1, initialize=True):
         super(CPM, self).__init__()
         self.pretrained = os.environ['CPM_PRETRAINED']
 
@@ -74,7 +74,8 @@ class CPM(nn.Module):
         self.pose1 = nn.Conv2d(185, out_channels=num_features_part, kernel_size=3, stride=1, padding=1)
         self.bn = nn.BatchNorm2d(num_features_part, affine=False)
 
-        self.init_pretrained()
+        if initialize:
+            self.init_pretrained()
 
     def forward(self, inputs):
         # data rescale
@@ -176,11 +177,11 @@ class Bilinear_Pooling(nn.Module):
         return output
 
 class Inception_v1_cpm(nn.Module):
-    def __init__(self, num_features=512, use_bn=True, use_relu=False, dilation=1):
+    def __init__(self, num_features=512, use_bn=True, use_relu=False, dilation=1, initialize=True):
         super(Inception_v1_cpm, self).__init__()
         num_features_app, num_features_part = (512, 128)
-        self.app_feat_extractor = Inception_v1(num_features=num_features_app, dilation=dilation)
-        self.part_feat_extractor = CPM(1, num_features_part=num_features_part, dilation=dilation)
+        self.app_feat_extractor = Inception_v1(num_features=num_features_app, dilation=dilation, initialize=initialize)
+        self.part_feat_extractor = CPM(1, num_features_part=num_features_part, dilation=dilation, initialize=initialize)
         self.pooling = Bilinear_Pooling(num_feat1=num_features_app, num_feat2=num_features_part, num_feat_out=num_features)
 
     def forward(self, inputs):
@@ -201,7 +202,7 @@ class Inception_v1_cpm(nn.Module):
         self.app_feat_extractor.init_pretrained()
         self.part_feat_extractor.init_pretrained()
 
-def inception_v1_cpm(features=512, use_relu=False, dilation=1):
-    model = Inception_v1_cpm(num_features=features, use_relu=use_relu, dilation=dilation)
+def inception_v1_cpm(features=512, use_relu=False, dilation=1, initialize=True):
+    model = Inception_v1_cpm(num_features=features, use_relu=use_relu, dilation=dilation, initialize=initialize)
 
     return model
