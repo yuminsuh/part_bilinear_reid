@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from collections import defaultdict
 
 import numpy as np
+import random
 import os.path as osp
 import os
 import glob
@@ -34,6 +35,35 @@ class RandomIdentitySampler(Sampler):
             ret.extend(t)
         return iter(ret)
 
+def gen_caffestyle_trainlist(dataset, output_path):
+    if dataset=='market1501':
+        data_dir = 'data/market1501/raw/Market-1501-v15.09.15/bounding_box_train/'
+    else:
+        raise ValueError('not available yet')
+
+    shuffle_times = 2000
+    random.seed(2018)
+
+    imglist = [osp.basename(f) for f in glob.glob(osp.join(data_dir, '*.jpg'))]
+    id_to_imgfile_dict = {}
+    for filename in imglist:
+        pid = filename.split('_')[0]
+        if pid not in id_to_imgfile_dict.keys():
+            id_to_imgfile_dict[pid] = [filename]
+        else:
+            id_to_imgfile_dict[pid].append(filename)
+    all_ids = list(id_to_imgfile_dict.keys())
+
+    msg = ''
+    for _ in range(shuffle_times):
+        random.shuffle(all_ids)
+        for pid in all_ids:
+            for filename in id_to_imgfile_dict[pid]:
+                msg += '{}\n'.format(filename)
+
+    with open(output_path, 'w') as f:
+        f.write(msg)
+
 class caffeSampler(Sampler):
     def __init__(self, data_source, dataset, batch_size, iter_per_epoch=100, root=None):
         print('Initialize caffe sampler...')
@@ -41,7 +71,8 @@ class caffeSampler(Sampler):
         self.index_dic = defaultdict(list)
         for index, (fname, _, _) in enumerate(data_source):
             self.index_dic[fname].append(index)
-        self.train_list_path = os.environ['{}_TRAIN_LIST'.format(dataset.upper())]
+        self.train_list_path = '{}_train_list.txt'.format(dataset)
+        gen_caffestyle_trainlist(dataset, self.train_list_path)
         dataset_dir = os.environ['{}_DATA_ROOT'.format(dataset.upper())]
         if dataset in ['market1501', 'dukemtmc', 'cuhk03_np']:
             dataset_dir = osp.join(dataset_dir, 'bounding_box_train')

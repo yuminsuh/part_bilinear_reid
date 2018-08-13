@@ -23,11 +23,6 @@ if ! [ -f "pretrained/pose_iter_440000.caffemodel.pth" ]; then
     wget "https://www.dropbox.com/s/pzb3ow1793yf8dc/pose_iter_440000.caffemodel.pth?dl=0" -O pretrained/pose_iter_440000.caffemodel.pth
     echo "Done!"
 fi
-if ! [ -f 'market_train_list.txt' ]; then
-    echo "Generating train list..."
-    python scripts/gen_market_trainlist.py
-    echo "Done!"
-fi
 
 
 # Make log directory
