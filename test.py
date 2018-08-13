@@ -36,7 +36,7 @@ dataset_ = Preprocessor(list(set(dataset.query)|set(dataset.gallery)), root=data
 dataloader = DataLoader(dataset_, batch_size=batch_size, shuffle=False)
 
 # Load model
-model = models.create(args['arch'], dilation=args['dilation'], use_relu=args['use_relu']).cuda()
+model = models.create(args['arch'], dilation=args['dilation'], use_relu=args['use_relu'], initialize=False).cuda()
 weight_file = osp.join(exp_dir, 'epoch_{}.pth.tar'.format(target_epoch))
 model.load(load_checkpoint(weight_file))
 model.eval()
