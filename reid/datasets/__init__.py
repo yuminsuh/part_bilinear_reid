@@ -2,9 +2,11 @@ from __future__ import absolute_import
 import warnings
 
 from .market1501 import Market1501
+from .mars import Mars
 
 __factory = {
     'market1501': Market1501,
+    'mars': Mars,
 }
 
 

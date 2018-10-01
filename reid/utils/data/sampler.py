@@ -38,16 +38,21 @@ class RandomIdentitySampler(Sampler):
 def gen_caffestyle_trainlist(dataset, output_path):
     if dataset=='market1501':
         data_dir = 'data/market1501/raw/Market-1501-v15.09.15/bounding_box_train/'
+    elif dataset=='mars':
+        data_dir = 'data/mars/raw/Mars/bbox_train/'
     else:
         raise ValueError('not available yet')
 
     shuffle_times = 2000
     random.seed(2018)
 
-    imglist = [osp.basename(f) for f in glob.glob(osp.join(data_dir, '*.jpg'))]
+    ext = '*/*.jpg' if dataset=='mars' else \
+          '*.jpg' if dataset in ['market1501', 'dukemtmc'] else '*.png'
+    maxlen = 10 if dataset=='mars' else 1000
+    imglist = [osp.basename(f) for f in glob.glob(osp.join(data_dir, ext))]
     id_to_imgfile_dict = {}
     for filename in imglist:
-        pid = filename.split('_')[0]
+        pid = filename[:4] if dataset=='mars' else filename.split('_')[0]
         if pid not in id_to_imgfile_dict.keys():
             id_to_imgfile_dict[pid] = [filename]
         else:
@@ -55,10 +60,13 @@ def gen_caffestyle_trainlist(dataset, output_path):
     all_ids = list(id_to_imgfile_dict.keys())
 
     msg = ''
-    for _ in range(shuffle_times):
+    for shuffle_idx in range(shuffle_times):
+        if shuffle_idx%100 == 0:
+            print('{}/{}'.format(shuffle_idx, shuffle_times))
         random.shuffle(all_ids)
         for pid in all_ids:
-            for filename in id_to_imgfile_dict[pid]:
+            random.shuffle(id_to_imgfile_dict[pid])
+            for filename in id_to_imgfile_dict[pid][:maxlen]:
                 msg += '{}\n'.format(filename)
 
     with open(output_path, 'w') as f:
@@ -76,6 +84,8 @@ class caffeSampler(Sampler):
         dataset_dir = os.environ['{}_DATA_ROOT'.format(dataset.upper())]
         if dataset in ['market1501', 'dukemtmc', 'cuhk03_np']:
             dataset_dir = osp.join(dataset_dir, 'bounding_box_train')
+        elif dataset == 'mars':
+            dataset_dir = osp.join(dataset_dir, 'Mars', 'bbox_train')
         ext = '*.jpg' if dataset in ['market1501', 'dukemtmc', 'mars'] else '*.png'
         orig_train_list = [v.rstrip().split()[0] for v in open(self.train_list_path, "r").readlines()]
         symlink_list = glob.glob(osp.join(root, ext))

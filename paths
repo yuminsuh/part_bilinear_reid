@@ -2,3 +2,4 @@ INCEPTION_V1_PRETRAINED=pretrained/bvlc_googlenet.caffemodel.pth
 CPM_PRETRAINED=pretrained/pose_iter_440000.caffemodel.pth
 
 MARKET1501_DATA_ROOT=$(pwd)/data/market1501/raw/Market-1501-v15.09.15
+MARS_DATA_ROOT=$(pwd)/data/mars/raw/Mars
