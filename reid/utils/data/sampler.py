@@ -50,6 +50,8 @@ def gen_caffestyle_trainlist(dataset, output_path):
           '*.jpg' if dataset in ['market1501', 'dukemtmc'] else '*.png'
     maxlen = 10 if dataset=='mars' else 1000
     imglist = [osp.basename(f) for f in glob.glob(osp.join(data_dir, ext))]
+    if dataset=='mars':
+        imglist = ['{}/{}'.format(f[:4],f) for f in imglist]
     id_to_imgfile_dict = {}
     for filename in imglist:
         pid = filename[:4] if dataset=='mars' else filename.split('_')[0]
@@ -85,7 +87,7 @@ class caffeSampler(Sampler):
         if dataset in ['market1501', 'dukemtmc', 'cuhk03_np']:
             dataset_dir = osp.join(dataset_dir, 'bounding_box_train')
         elif dataset == 'mars':
-            dataset_dir = osp.join(dataset_dir, 'Mars', 'bbox_train')
+            dataset_dir = osp.join(dataset_dir, 'bbox_train')
         ext = '*.jpg' if dataset in ['market1501', 'dukemtmc', 'mars'] else '*.png'
         orig_train_list = [v.rstrip().split()[0] for v in open(self.train_list_path, "r").readlines()]
         symlink_list = glob.glob(osp.join(root, ext))
