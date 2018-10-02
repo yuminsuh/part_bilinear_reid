@@ -43,7 +43,7 @@ def gen_caffestyle_trainlist(dataset, output_path):
     else:
         raise ValueError('not available yet')
 
-    shuffle_times = 2000
+    shuffle_times = 4000 #2000
     random.seed(2018)
 
     ext = '*/*.jpg' if dataset=='mars' else \
@@ -67,8 +67,8 @@ def gen_caffestyle_trainlist(dataset, output_path):
             print('{}/{}'.format(shuffle_idx, shuffle_times))
         random.shuffle(all_ids)
         for pid in all_ids:
-            random.shuffle(id_to_imgfile_dict[pid])
-            for filename in id_to_imgfile_dict[pid][:maxlen]:
+            l = id_to_imgfile_dict[pid]
+            for filename in random.sample(l, min(len(l), maxlen)):
                 msg += '{}\n'.format(filename)
 
     with open(output_path, 'w') as f:
