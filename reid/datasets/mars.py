@@ -24,7 +24,7 @@ def _pluck(identities, indices, relabel=False):
     for camid, cam_images in enumerate(pid_images):
       for fname in cam_images:
         name = osp.splitext(fname)[0]
-        x, y, _ = map(int, name.split('_'))
+        x, y, _, _ = map(int, name.split('_'))
         assert pid == x and camid == y
         if relabel:
           ret.append((fname, index, camid))
@@ -102,13 +102,14 @@ class Mars(Dataset):
 #        pid, cam = map(int, pattern.search(fname).groups())
         pid = int(fname[:4]) if fname[:4]!='00-1' else -1
         cam = int(fname[5:6])
+        track = int(fname[7:11])
         if pid == -1: continue  # junk images are just ignored
         assert 0 <= pid <= 1501  # pid == 0 means background
         assert 1 <= cam <= 6
         cam -= 1
         pids.add(pid)
-        fname = ('{:08d}_{:02d}_{:04d}.jpg'
-                 .format(pid, cam, len(identities[pid][cam])))
+        fname = ('{:08d}_{:02d}_{:04d}_{:04d}.jpg'
+                 .format(pid, cam, track, len(identities[pid][cam])))
         identities[pid][cam].append(fname)
         os.symlink(osp.abspath(fpath), osp.join(images_dir, fname))
         fnames.append(fname) ######### Added
@@ -172,12 +173,12 @@ class Mars(Dataset):
     self.query = []
     for fname in query_fnames:
       name = osp.splitext(fname)[0]
-      pid, cam, _ = map(int, name.split('_'))
+      pid, cam, _, _ = map(int, name.split('_'))
       self.query.append((fname, pid, cam))
     self.gallery = []
     for fname in gallery_fnames:
       name = osp.splitext(fname)[0]
-      pid, cam, _ = map(int, name.split('_'))
+      pid, cam, _, _ = map(int, name.split('_'))
       self.gallery.append((fname, pid, cam))
     ##########
 
