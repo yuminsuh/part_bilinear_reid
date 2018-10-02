@@ -70,6 +70,7 @@ class Evaluator(object):
         self.model = model
 
     def evaluate(self, data_loader, query, gallery, topk=1000, msg=''):
+        mars_dir = osp.join('MARS-evaluation', 'info')
 
         # Extract query & gallery features
         features, _ = extract_features(self.model, data_loader)
@@ -77,9 +78,9 @@ class Evaluator(object):
             print('Video-based dataset!')
             """ read from original data """
             # TODO:path
-            orig_track_info = scipy.io.loadmat('/media/yumin/f553e2b2-cd61-4e95-b59d-e532072c3e0f/home/yumin/codes/MARS-evaluation_original/info/tracks_test_info.mat')['track_test_info']
-            orig_query_idx = scipy.io.loadmat('/media/yumin/f553e2b2-cd61-4e95-b59d-e532072c3e0f/home/yumin/codes/MARS-evaluation_original/info/query_IDX.mat')['query_IDX']
-            orig_test_list = [line.rstrip() for line in open('/media/yumin/f553e2b2-cd61-4e95-b59d-e532072c3e0f/home/yumin/dataset/MARS/test_name_from_datadir.txt','r').readlines()]
+            orig_track_info = scipy.io.loadmat(osp.join(mars_dir, 'tracks_test_info.mat'))['track_test_info']
+            orig_query_idx = scipy.io.loadmat(osp.join(mars_dir, 'query_IDX.mat'))['query_IDX']
+            orig_test_list = [line.rstrip() for line in open(osp.join(mars_dir, 'test_name.txt'),'r').readlines()]
 
             orig_to_sym_dict = {}
             for v in dataset.query:
@@ -100,10 +101,6 @@ class Evaluator(object):
 
             query_track = [parse_trackid(q) for q in query_track_iids]
             gallery_track = [parse_trackid(q) for q in unique_track_iids]
-            query_track_ids = [p for _,p,_ in query_track]
-            gallery_track_ids = [p for _,p,_ in gallery_track]
-            query_track_cams = [c for _,_,c in query_track]
-            gallery_track_cams = [c for _,_,c in gallery_track]
 
             """ extract track features """
             target = list(set(dataset.query) | set(dataset.gallery))
@@ -115,21 +112,18 @@ class Evaluator(object):
                 features_track = {}
                 for track_id in unique_track_iids:
                     features_track[track_id] = torch.stack(trackid_to_feats_dict[track_id]).mean(dim=0)
+                    features_track[track_id] = features_track[track_id] / torch.sqrt((features_track[track_id]**2).sum())
             # Overwrite
             features = features_track
             query = query_track
             gallery = gallery_track
-            query_ids, query_cams = query_track_ids, query_track_cams
-            gallery_ids, gallery_cams = gallery_track_ids, gallery_track_cams
             print(len(query))
             print(len(gallery))
 
-        else:
-            print('Image-based dataset!')
-            query_ids = [pid for _,pid,_ in query]
-            query_cams = [cid for _,_,cid in query]
-            gallery_ids = [pid for _,pid,_ in gallery]
-            gallery_cams = [cid for _,_,cid in gallery]
+        query_ids = [pid for _,pid,_ in query]
+        query_cams = [cid for _,_,cid in query]
+        gallery_ids = [pid for _,pid,_ in gallery]
+        gallery_cams = [cid for _,_,cid in gallery]
 
 #        feat_query = torch.cat([features[f].unsqueeze(0) for f,_,_ in query], 0)
 #        feat_gallery = torch.cat([features[f].unsqueeze(0) for f,_,_ in gallery], 0)
