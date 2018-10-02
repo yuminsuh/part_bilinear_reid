@@ -73,13 +73,66 @@ class Evaluator(object):
 
         # Extract query & gallery features
         features, _ = extract_features(self.model, data_loader)
-        query_ids = [pid for _,pid,_ in query]
-        query_cams = [cid for _,_,cid in query]
-        gallery_ids = [pid for _,pid,_ in gallery]
-        gallery_cams = [cid for _,_,cid in gallery]
+        if type(dataset).__name__ =='Mars':
+            print('Video-based dataset!')
+            """ read from original data """
+            # TODO:path
+            orig_track_info = scipy.io.loadmat('/media/yumin/f553e2b2-cd61-4e95-b59d-e532072c3e0f/home/yumin/codes/MARS-evaluation_original/info/tracks_test_info.mat')['track_test_info']
+            orig_query_idx = scipy.io.loadmat('/media/yumin/f553e2b2-cd61-4e95-b59d-e532072c3e0f/home/yumin/codes/MARS-evaluation_original/info/query_IDX.mat')['query_IDX']
+            orig_test_list = [line.rstrip() for line in open('/media/yumin/f553e2b2-cd61-4e95-b59d-e532072c3e0f/home/yumin/dataset/MARS/test_name_from_datadir.txt','r').readlines()]
 
-        feat_query = torch.cat([features[f].unsqueeze(0) for f,_,_ in query], 0)
-        feat_gallery = torch.cat([features[f].unsqueeze(0) for f,_,_ in gallery], 0)
+            orig_to_sym_dict = {}
+            for v in dataset.query:
+                origpath = osp.basename(osp.realpath(osp.join(dataset.images_dir, v[0])))
+                orig_to_sym_dict[origpath] = v[0]
+
+            query_track_info = orig_track_info[orig_query_idx-1,:].squeeze()
+            query_track_iids = []
+            for q in query_track_info:
+                sympath = orig_to_sym_dict[osp.basename(orig_test_list[q[0]-1])]
+                query_track_iids.append(int(sympath.split('_')[0] + sympath.split('_')[1] + sympath.split('_')[2]))
+
+            """ track info """
+            def parse_trackid(trackid):
+                pid = int('{:010d}'.format(trackid)[:4])
+                cam = int('{:010d}'.format(trackid)[4:6])
+                return trackid, pid, cam
+
+            query_track = [parse_trackid(q) for q in query_track_iids]
+            gallery_track = [parse_trackid(q) for q in unique_track_iids]
+            query_track_ids = [p for _,p,_ in query_track]
+            gallery_track_ids = [p for _,p,_ in gallery_track]
+            query_track_cams = [c for _,_,c in query_track]
+            gallery_track_cams = [c for _,_,c in gallery_track]
+
+            """ extract track features """
+            target = list(set(dataset.query) | set(dataset.gallery))
+            track_ids = [int(v[0].split('_')[0]+v[0].split('_')[1]+v[0].split('_')[2]) for v in target]
+            unique_track_iids = np.unique(track_ids)
+            trackid_to_feats_dict = defaultdict(list)
+            for track_id, v in zip(track_ids, target):
+                trackid_to_feats_dict[track_id].append(features[v[0]])
+                features_track = {}
+                for track_id in unique_track_iids:
+                    features_track[track_id] = torch.stack(trackid_to_feats_dict[track_id]).mean(dim=0)
+            # Overwrite
+            features = features_track
+            query = query_track
+            gallery = gallery_track
+            query_ids, query_cams = query_track_ids, query_track_cams
+            gallery_ids, gallery_cams = gallery_track_ids, gallery_track_cams
+            print(len(query))
+            print(len(gallery))
+
+        else:
+            print('Image-based dataset!')
+            query_ids = [pid for _,pid,_ in query]
+            query_cams = [cid for _,_,cid in query]
+            gallery_ids = [pid for _,pid,_ in gallery]
+            gallery_cams = [cid for _,_,cid in gallery]
+
+#        feat_query = torch.cat([features[f].unsqueeze(0) for f,_,_ in query], 0)
+#        feat_gallery = torch.cat([features[f].unsqueeze(0) for f,_,_ in gallery], 0)
 
         # Calculate CMC & mAP
 #        result_cmc, result_meanap = cmc_meanap_fast(feat_query, feat_gallery,
