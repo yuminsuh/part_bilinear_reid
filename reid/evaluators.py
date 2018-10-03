@@ -1,7 +1,9 @@
 from __future__ import print_function, absolute_import
 import time
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import os.path as osp
+import scipy.io
+import sys
 
 import torch
 
@@ -16,7 +18,8 @@ def extract_features(model, data_loader, print_freq=10):
     batch_time = AverageMeter()
     data_time = AverageMeter()
 
-    features = OrderedDict()
+    index = OrderedDict()
+    features = np.zeros((len(data_loader.dataset.dataset), 512)) #OrderedDict()
     labels = OrderedDict()
 
     end = time.time()
@@ -24,8 +27,11 @@ def extract_features(model, data_loader, print_freq=10):
         data_time.update(time.time() - end)
 
         outputs = extract_cnn_feature(model, imgs.cuda())
-        for fname, output, pid in zip(fnames, outputs, pids):
-            features[fname] = output
+        for j, (fname, output, pid) in enumerate(zip(fnames, outputs, pids)):
+            idx = i*imgs.shape[0] + j
+            index[fname] = idx
+            features[idx,:] = output.detach().cpu().numpy()
+#            features[fname] = output
             labels[fname] = pid
 
         batch_time.update(time.time() - end)
@@ -39,7 +45,9 @@ def extract_features(model, data_loader, print_freq=10):
                           batch_time.val, batch_time.avg,
                           data_time.val, data_time.avg))
 
-    return features, labels
+        sys.stdout.flush()
+
+    return features, labels, index
 
 def pairwise_distance(features, query=None, gallery=None, metric=None):
     if query is None and gallery is None:
@@ -74,11 +82,11 @@ class Evaluator(object):
         mars_dir = osp.join('MARS-evaluation', 'info')
 
         # Extract query & gallery features
-        features, _ = extract_features(self.model, data_loader)
-        if type(dataset).__name__ =='Mars':
+        print(type(dataloader.datset).__name__)
+        features_raw, _, index = extract_features(self.model, data_loader)
+        if type(dataloader.dataset).__name__ =='Mars':
             print('Video-based dataset!')
             """ read from original data """
-            # TODO:path
             orig_track_info = scipy.io.loadmat(osp.join(mars_dir, 'tracks_test_info.mat'))['track_test_info']
             orig_query_idx = scipy.io.loadmat(osp.join(mars_dir, 'query_IDX.mat'))['query_IDX']
             orig_test_list = [line.rstrip() for line in open(osp.join(mars_dir, 'test_name.txt'),'r').readlines()]
@@ -100,26 +108,30 @@ class Evaluator(object):
                 cam = int('{:010d}'.format(trackid)[4:6])
                 return trackid, pid, cam
 
-            query_track = [parse_trackid(q) for q in query_track_iids]
-            gallery_track = [parse_trackid(q) for q in unique_track_iids]
-
             """ extract track features """
             target = list(set(dataset.query) | set(dataset.gallery))
             track_ids = [int(v[0].split('_')[0]+v[0].split('_')[1]+v[0].split('_')[2]) for v in target]
             unique_track_iids = np.unique(track_ids)
             trackid_to_feats_dict = defaultdict(list)
             for track_id, v in zip(track_ids, target):
-                trackid_to_feats_dict[track_id].append(features[v[0]])
-                features_track = {}
-                for track_id in unique_track_iids:
-                    features_track[track_id] = torch.stack(trackid_to_feats_dict[track_id]).mean(dim=0)
-                    features_track[track_id] = features_track[track_id] / torch.sqrt((features_track[track_id]**2).sum())
+                trackid_to_feats_dict[track_id].append(features[index[v[0]],:])
+            features_track = {}
+            for track_id in unique_track_iids:
+                features_track[track_id] = torch.stack(trackid_to_feats_dict[track_id]).mean(dim=0)
+                features_track[track_id] = features_track[track_id] / torch.sqrt((features_track[track_id]**2).sum())
+
+            query_track = [parse_trackid(q) for q in query_track_iids]
+            gallery_track = [parse_trackid(q) for q in unique_track_iids]
+
             # Overwrite
             features = features_track
             query = query_track
             gallery = gallery_track
             print(len(query))
             print(len(gallery))
+        else:
+            print('Image-based dataset!')
+            features = features_raw
 
         query_ids = [pid for _,pid,_ in query]
         query_cams = [cid for _,_,cid in query]
