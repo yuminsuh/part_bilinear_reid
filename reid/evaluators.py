@@ -85,13 +85,13 @@ class Evaluator(object):
         # Extract query & gallery features
 #        features_raw, _, index = extract_features(self.model, data_loader)
         import pickle
-#        pickle.dump(features_raw, open('features_raw.pkl','wb'))
-#        print('save done!')
+        """
+        pickle.dump(features_raw, open('features_raw.pkl','wb'))
+        pickle.dump(index, open('index.pkl','wb'))
+        print('save done!')
+        """
         features_raw = pickle.load(open('features_raw.pkl','rb'))
-        index = OrderedDict()
-        for i, fnames in enumerate(data_loader.dataset.dataset):
-            for j, fname in enumerate(fnames):
-                index[fname] = i*50 + j
+        index = pickle.load(open('index.pkl', 'rb'))
         print('load done!')
         if True:
             print('Only for MARS dataset!')
@@ -123,7 +123,7 @@ class Evaluator(object):
             unique_track_iids = np.unique(track_ids)
             trackid_to_feats_dict = defaultdict(list)
             for track_id, v in zip(track_ids, target):
-                trackid_to_feats_dict[track_id].append(features_raw[index[v[0]],:])
+                trackid_to_feats_dict[track_id].append(torch.FloatTensor(features_raw[index[v[0]],:]))
             features_track = {}
             for track_id in unique_track_iids:
                 features_track[track_id] = torch.stack(trackid_to_feats_dict[track_id]).mean(dim=0)
