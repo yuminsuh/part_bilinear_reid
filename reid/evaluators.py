@@ -83,16 +83,18 @@ class Evaluator(object):
         images_dir = 'data/mars/images'
 
         # Extract query & gallery features
-#        features_raw, _, index = extract_features(self.model, data_loader)
+        features_raw, _, index = extract_features(self.model, data_loader)
         import pickle
         """
         pickle.dump(features_raw, open('features_raw.pkl','wb'))
         pickle.dump(index, open('index.pkl','wb'))
         print('save done!')
         """
+        """
         features_raw = pickle.load(open('features_raw.pkl','rb'))
         index = pickle.load(open('index.pkl', 'rb'))
         print('load done!')
+        """
         if True:
             print('Only for MARS dataset!')
             """ read from original data """

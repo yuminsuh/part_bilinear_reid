@@ -14,7 +14,7 @@ from reid.utils.serialization import load_checkpoint
 from reid.utils.osutils import set_paths
 
 # Settings
-exp_dir = 'logs/mars/tmp2' #'logs/market1501/d2_b250'
+exp_dir = 'logs/mars/d2_b250'
 target_epoch = 750
 batch_size = 50
 gpu_ids = '0'
