@@ -14,7 +14,7 @@ from reid.utils.serialization import load_checkpoint
 from reid.utils.osutils import set_paths
 
 # Settings
-exp_dir = 'logs/market1501/d2_b250'
+exp_dir = 'logs/mars/tmp2' #'logs/market1501/d2_b250'
 target_epoch = 750
 batch_size = 50
 gpu_ids = '0'
@@ -33,7 +33,7 @@ t = T.Compose([
               ])
 dataset = datasets.create(args['dataset'], 'data/{}'.format(args['dataset']))
 dataset_ = Preprocessor(list(set(dataset.query)|set(dataset.gallery)), root=dataset.images_dir, transform=t)
-dataloader = DataLoader(dataset_, batch_size=batch_size, shuffle=False)
+dataloader = DataLoader(dataset_, batch_size=batch_size, shuffle=False, pin_memory=True, num_workers=4)
 
 # Load model
 model = models.create(args['arch'], dilation=args['dilation'], use_relu=args['use_relu'], initialize=False).cuda()
