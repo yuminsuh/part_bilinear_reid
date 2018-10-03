@@ -80,20 +80,29 @@ class Evaluator(object):
 
     def evaluate(self, data_loader, query, gallery, topk=1000, msg=''):
         mars_dir = osp.join('MARS-evaluation', 'info')
+        images_dir = 'data/mars/images'
 
         # Extract query & gallery features
-        print(type(dataloader.datset).__name__)
-        features_raw, _, index = extract_features(self.model, data_loader)
-        if type(dataloader.dataset).__name__ =='Mars':
-            print('Video-based dataset!')
+#        features_raw, _, index = extract_features(self.model, data_loader)
+        import pickle
+#        pickle.dump(features_raw, open('features_raw.pkl','wb'))
+#        print('save done!')
+        features_raw = pickle.load(open('features_raw.pkl','rb'))
+        index = OrderedDict()
+        for i, fnames in enumerate(data_loader.dataset.dataset):
+            for j, fname in enumerate(fnames):
+                index[fname] = i*50 + j
+        print('load done!')
+        if True:
+            print('Only for MARS dataset!')
             """ read from original data """
             orig_track_info = scipy.io.loadmat(osp.join(mars_dir, 'tracks_test_info.mat'))['track_test_info']
             orig_query_idx = scipy.io.loadmat(osp.join(mars_dir, 'query_IDX.mat'))['query_IDX']
             orig_test_list = [line.rstrip() for line in open(osp.join(mars_dir, 'test_name.txt'),'r').readlines()]
 
             orig_to_sym_dict = {}
-            for v in dataset.query:
-                origpath = osp.basename(osp.realpath(osp.join(dataset.images_dir, v[0])))
+            for v in query:
+                origpath = osp.basename(osp.realpath(osp.join(images_dir, v[0])))
                 orig_to_sym_dict[origpath] = v[0]
 
             query_track_info = orig_track_info[orig_query_idx-1,:].squeeze()
@@ -109,12 +118,12 @@ class Evaluator(object):
                 return trackid, pid, cam
 
             """ extract track features """
-            target = list(set(dataset.query) | set(dataset.gallery))
+            target = list(set(query) | set(gallery))
             track_ids = [int(v[0].split('_')[0]+v[0].split('_')[1]+v[0].split('_')[2]) for v in target]
             unique_track_iids = np.unique(track_ids)
             trackid_to_feats_dict = defaultdict(list)
             for track_id, v in zip(track_ids, target):
-                trackid_to_feats_dict[track_id].append(features[index[v[0]],:])
+                trackid_to_feats_dict[track_id].append(features_raw[index[v[0]],:])
             features_track = {}
             for track_id in unique_track_iids:
                 features_track[track_id] = torch.stack(trackid_to_feats_dict[track_id]).mean(dim=0)
@@ -130,7 +139,6 @@ class Evaluator(object):
             print(len(query))
             print(len(gallery))
         else:
-            print('Image-based dataset!')
             features = features_raw
 
         query_ids = [pid for _,pid,_ in query]
