@@ -83,6 +83,7 @@ class caffeSampler(Sampler):
             self.index_dic[fname].append(index)
         self.train_list_path = '{}_train_list.txt'.format(dataset)
         gen_caffestyle_trainlist(dataset, self.train_list_path)
+#        self.train_list_path = '{}_train_list_orig.txt'.format(dataset)
         dataset_dir = os.environ['{}_DATA_ROOT'.format(dataset.upper())]
         if dataset in ['market1501', 'dukemtmc', 'cuhk03_np']:
             dataset_dir = osp.join(dataset_dir, 'bounding_box_train')
