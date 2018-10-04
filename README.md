@@ -30,6 +30,4 @@ Contact: Yumin Suh (n12345@snu.ac.kr)
 
 - Run `runall.sh` to train the model
 
-- Run `eval_market1501.sh` to evaluate
-
 - Run `eval_mars.sh` to evaluate
