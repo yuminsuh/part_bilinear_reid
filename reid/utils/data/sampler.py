@@ -38,6 +38,8 @@ class RandomIdentitySampler(Sampler):
 def gen_caffestyle_trainlist(dataset, output_path):
     if dataset=='market1501':
         data_dir = 'data/market1501/raw/Market-1501-v15.09.15/bounding_box_train/'
+    elif dataset=='dukemtmc':
+        data_dir = 'data/dukemtmc/raw/DukeMTMC-reID/bounding_box_train/'
     else:
         raise ValueError('not available yet')
 

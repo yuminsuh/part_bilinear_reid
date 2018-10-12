@@ -1,0 +1,26 @@
+PYTHON='python'
+EXP_ID='tmp'
+GPU_ID="0,1"
+
+# model
+ARCH='inception_v1_cpm'
+FEATURES=512
+DILATION=2
+USE_RELU=false
+
+# data
+DATASET='market1501'
+HEIGHT=160
+WIDTH=80
+CROP_HEIGHT=160
+CROP_WIDTH=80
+BATCH_SIZE=250
+USE_CAFFE_SAMPLER=true # [true | false]
+
+# optimizer
+OPTIMIZER='sgd_caffe'
+LR=0.01
+WEIGHT_DECAY=0.0002
+EPOCHS=750
+
+LOG_DIR="logs/$DATASET/$EXP_ID"
