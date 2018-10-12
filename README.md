@@ -28,6 +28,8 @@ Contact: Yumin Suh (n12345@snu.ac.kr)
 
 ## Usage
 
-- Run `runall.sh` to train the model
-
+- Run `train_market1501.sh` to train a model on the Market-1501 dataset
 - Run `eval_market1501.sh` to evaluate
+
+- Run `train_dukemtmc.sh' to train a model on the DukeMTMC dataset
+- Run `eval_dukemtmc.sh` to evaluate

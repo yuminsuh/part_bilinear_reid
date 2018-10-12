@@ -12,4 +12,4 @@ if ! [ -f "logs/market1501/d2_b250/epoch_750.pth.tar" ]; then
     
 fi
 
-python test.py
+python test.py -d 'market1501' -e 'd2_b250' --epoch 750 --batchsize 50 --gpus '0'
