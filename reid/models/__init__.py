@@ -1,10 +1,12 @@
 from __future__ import absolute_import
 
 from .cpm import inception_v1_cpm
+from .inception_caffe import inception_v1
 
 
 __factory = {
     'inception_v1_cpm': inception_v1_cpm,
+    'inception_v1': inception_v1,
 }
 
 

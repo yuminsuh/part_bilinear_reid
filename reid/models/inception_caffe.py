@@ -40,10 +40,11 @@ class Inception_base(nn.Module):
         return torch.cat([output1, output2, output3, output4], dim=self.depth_dim)
 
 class Inception_v1(nn.Module):
-    def __init__(self, num_features=512, dilation=1, initialize=True):
+    def __init__(self, num_features=512, dilation=1, initialize=True, feat_type='4e'):
         super(Inception_v1, self).__init__()
         self.dilation = dilation
         self.pretrained = os.environ['INCEPTION_V1_PRETRAINED']
+        self.feat_type = feat_type
 
         #conv2d0
         self.conv1__7x7_s2 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3)
@@ -70,8 +71,16 @@ class Inception_v1(nn.Module):
         self.inception_4d = Inception_base(1, 512, [[112], [144,288], [32, 64], [pool_kernel, 64]], dilation=self.dilation) #4d
         self.inception_4e = Inception_base(1, 528, [[256], [160,320], [32,128], [pool_kernel,128]], dilation=self.dilation) #4e
 
-        self.input_feat = nn.Conv2d(832, num_features, (1,1), (1,1), (0,0))
-        self.bn = nn.BatchNorm2d(num_features, affine=False)
+        if self.feat_type == '5b':
+            assert self.dilation == 1
+            pool_kernel = self.dilation*2 + 1
+
+            self.inception_5a = Inception_base(1, 832, [[256], [160,320], [32,128], [pool_kernel,128]], dilation=self.dilation) #5a
+            self.inception_5b = Inception_base(1, 832, [[384], [192,384], [48,128], [pool_kernel,128]], dilation=self.dilation) #5b
+            self.input_feat = nn.Conv2d(1024, num_features, (1,1), (1,1), (0,0))
+        else:
+            self.input_feat = nn.Conv2d(832, num_features, (1,1), (1,1), (0,0))
+            self.bn = nn.BatchNorm2d(num_features, affine=False)
 
         if initialize:
             self.init_pretrained()
@@ -96,8 +105,16 @@ class Inception_v1(nn.Module):
         output = self.inception_4d(output)
         output = self.inception_4e(output)
 
-        output = self.input_feat(output)
-        output = self.bn(output)
+        if self.feat_type == '5b':
+            output = self.inception_5a(output)
+            output = self.inception_5b(output)
+            output = nn.AdaptiveAvgPool2d(1)(output)
+            output = self.input_feat(output)
+            output = F.normalize(output, dim=1)
+            output = output.squeeze()
+        else:
+            output = self.input_feat(output)
+            output = self.bn(output)
 
         return output
 
@@ -105,9 +122,10 @@ class Inception_v1(nn.Module):
         state_dict = torch.load(self.pretrained)
         state_dict['input_feat.weight'] = nn.init.xavier_uniform_(self.input_feat.weight).detach()
         state_dict['input_feat.bias'] = torch.zeros(self.input_feat.bias.size())
-        #TODO
-        state_dict['bn.running_mean'] = self.bn.running_mean
-        state_dict['bn.running_var'] = self.bn.running_var
+        if not self.feat_type =='5b':
+            #TODO
+            state_dict['bn.running_mean'] = self.bn.running_mean
+            state_dict['bn.running_var'] = self.bn.running_var
 
         model_dict = {}
         for k,v in state_dict.items():
@@ -115,5 +133,24 @@ class Inception_v1(nn.Module):
                 if k.replace("/",".") in l.replace("__",".").replace("._","."):
                     model_dict[l] = torch.from_numpy(np.array(v)).view_as(p) 
 
-        self.load_state_dict(model_dict, strict=False)
+#        self.load_state_dict(model_dict, strict=False)
+        self.load_state_dict(model_dict, strict=True)
+        """
         print('inception v1 pretrained model loaded!')
+        print('difference:--------------------------')
+        print(set(self.state_dict().keys()).symmetric_difference(model_dict.keys()))
+        print('inception v1 pretrained model loaded!')
+        """
+
+    def save_dict(self):
+        return self.state_dict()
+
+    def load(self, checkpoint):
+        checkpoint.pop('epoch')
+        if torch.__version__=='0.4.0':
+            checkpoint.pop('bn.num_batches_tracked',None)
+        self.load_state_dict(checkpoint)
+
+def inception_v1(features=512, use_relu=False, dilation=1, initialize=True):
+    model = Inception_v1(num_features=features, feat_type='5b', dilation=dilation, initialize=initialize)
+    return model
