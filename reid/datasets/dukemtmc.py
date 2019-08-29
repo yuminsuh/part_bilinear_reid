@@ -115,7 +115,7 @@ class DukeMTMC(Dataset):
         fname = ('{:08d}_{:02d}_{:04d}.jpg'
                  .format(pid, cam, len(identities[pid][cam])))
         identities[pid][cam].append(fname)
-        os.symlink(fpath, osp.join(images_dir, fname))
+        os.symlink(osp.abspath(fpath), osp.join(images_dir, fname))
         fnames.append(fname) ######### Added
       return pids, fnames
 
